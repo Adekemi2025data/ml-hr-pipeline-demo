@@ -4,6 +4,7 @@ import sys
 import random
 import pickle
 import json
+import yaml
 from collections import Counter
 
 def load_data(path):
