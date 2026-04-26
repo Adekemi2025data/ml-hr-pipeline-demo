@@ -1,0 +1,5 @@
+outs:
+- md5: c6ad0e8c66aa123bc1af3aa174924857
+  size: 385550
+  hash: md5
+  path: WAFn-UseC-HR-Employee-Attrition.csv
