@@ -1,5 +1,7 @@
 HR Attrition Model & Drift Analysis Insights
 
+This project is the sprint 17 project.  I decided to use the data from the Employee Attrition from Kaggle (IBM HR Analytics) to have hands on expereince on MLops.
+
 This repository contains a complete HR Attrition Dataset designed for machine learning workflows, including:
 
 Employee attrition prediction
