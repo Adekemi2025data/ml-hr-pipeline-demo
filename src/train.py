@@ -130,3 +130,7 @@ if __name__ == "__main__":
     with open("metrics/results.json", "w") as f:
         json.dump(metrics, f, indent=2)
     print("Metrics saved to metrics/results.json")
+quality = check_data_quality(df, config["numeric_columns"])
+print(f"Data quality: {quality['total_nulls']} nulls, {quality['duplicate_rows']} duplicates")
+if quality["null_percentage"] > 10:
+        print(f"WARNING: High null percentage: {quality['null_percentage']}%")
