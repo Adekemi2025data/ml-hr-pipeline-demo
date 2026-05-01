@@ -1,0 +1,82 @@
+# -------------------------
+# Python cache & artifacts
+# -------------------------
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pkl
+*.pickle
+
+# -------------------------
+# Virtual environments
+# -------------------------
+venv/
+.env/
+.venv/
+
+# -------------------------
+# Jupyter Notebook
+# -------------------------
+.ipynb_checkpoints/
+
+# -------------------------
+# OS-specific files
+# -------------------------
+.DS_Store
+Thumbs.db
+
+# -------------------------
+# Logs & temp files
+# -------------------------
+*.log
+*.tmp
+*.swp
+
+# -------------------------
+# Data files
+# (Keep raw data out of Git)
+# -------------------------
+data/
+*.csv
+*.xlsx
+*.xls
+
+# If you want to track ONLY config YAMLs:
+!*.yaml
+!*.yml
+
+# -------------------------
+# Model artifacts
+# -------------------------
+models/
+*.joblib
+*.h5
+*.onnx
+
+# -------------------------
+# Metrics & reports
+# -------------------------
+metrics/
+reports/
+*.html
+*.json
+
+# -------------------------
+# MLflow
+# -------------------------
+mlruns/
+mlartifacts/
+
+# -------------------------
+# IDE settings
+# -------------------------
+.vscode/
+.idea/
+
+# -------------------------
+# Build / dist
+# -------------------------
+build/
+dist/
+*.egg-info/

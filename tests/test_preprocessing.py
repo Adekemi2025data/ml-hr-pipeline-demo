@@ -3,125 +3,97 @@ import numpy as np
 import pytest
 import sys
 
+# Ensure src/ is on the Python path
 sys.path.insert(0, "src")
 
-from preprocessing import validate_dataframe, clean_data, encode_categoricals, check_data_quality
+from preprocessing import(
+    fill_missing_with_median,
+    normalize_column,
+    encode_binary_column,
+    create_age_bins,
+    remove_outliers
+)
 
-# ───────────────────────────────────────────────────────────────
-# HR SAMPLE DATA
-# ───────────────────────────────────────────────────────────────
-
-@pytest.fixture
-def sample_hr_data():
-    """Small dataset that mimics an HR attrition dataset structure."""
-    return pd.DataFrame({
-        "Age": [34.0, 29.0, np.nan, 41.0, 25.0, 30.0],
-        "MonthlyIncome": [4500.0, 5200.0, 6100.0, np.nan, 3900.0, 4800.0],
-        "YearsAtCompany": [5, 2, 7, 10, 1, 3],
-        "JobRole": ["Sales Executive", "Research Scientist", "Sales Executive",
-                    "Manager", "Laboratory Technician", "Manager"],
-        "Department": ["Sales", "R&D", "Sales", "HR", "R&D", "HR"],
-        "Gender": ["Male", "Female", "Male", "Female", "Male", "Female"],
-        "OverTime": ["Yes", "No", "Yes", "No", "Yes", "No"],
-        "Attrition": [0, 1, 0, 1, 0, 0]
+# ───────────────────────────────────────────────
+# Test: fill_missing_with_median
+# ───────────────────────────────────────────────
+def test_fill_missing_replaces_nulls():
+    df = pd.DataFrame({
+        "Age": [20.0, 30.0, np.nan, 40.0, 50.0]
     })
 
-# ───────────────────────────────────────────────────────────────
-# validate_dataframe tests
-# ───────────────────────────────────────────────────────────────
+    result = fill_missing_with_median(df, ["Age"])
 
-class TestValidateDataframe:
+    assert result["Age"].isna().sum() == 0
+    assert result["Age"].iloc[2] == 35.0  # median of [20,30,40,50]
 
-    def test_valid_dataframe_passes(self, sample_hr_data):
-        result = validate_dataframe(
-            sample_hr_data,
-            required_columns=["Age", "Gender", "Attrition"],
-            target_column="Attrition"
-        )
-        assert result is True
 
-    def test_missing_column_raises(self, sample_hr_data):
-        with pytest.raises(ValueError, match="Missing required HR columns"):
-            validate_dataframe(
-                sample_hr_data,
-                required_columns=["Age", "Nonexistent"],
-                target_column="Attrition"
-            )
+def test_fill_missing_raises_for_missing_column():
+    df = pd.DataFrame({"Age": [25, 30]})
+    with pytest.raises(ValueError):
+        fill_missing_with_median(df, ["NotAColumn"])
 
-    def test_missing_target_raises(self, sample_hr_data):
-        with pytest.raises(ValueError, match="Target column"):
-            validate_dataframe(
-                sample_hr_data,
-                required_columns=["Age"],
-                target_column="NonexistentTarget"
-            )
 
-    def test_empty_dataframe_raises(self):
-        empty_df = pd.DataFrame({"Age": [], "Attrition": []})
-        with pytest.raises(ValueError, match="empty"):
-            validate_dataframe(empty_df, ["Age"], "Attrition")
+# ───────────────────────────────────────────────
+# Test: normalize_column
+# ───────────────────────────────────────────────
+def test_normalize_min_max():
+    df = pd.DataFrame({"MonthlyIncome": [1000, 2000, 3000]})
+    result = normalize_column(df, "MonthlyIncome", method="min-max")
 
-# ───────────────────────────────────────────────────────────────
-# clean_data tests
-# ───────────────────────────────────────────────────────────────
+    assert result["MonthlyIncome"].min() == 0.0
+    assert result["MonthlyIncome"].max() == 1.0
 
-class TestCleanData:
 
-    def test_fills_numeric_nulls(self, sample_hr_data):
-        result = clean_data(sample_hr_data, ["Age", "MonthlyIncome"], [])
-        assert result["Age"].isna().sum() == 0
-        assert result["MonthlyIncome"].isna().sum() == 0
+def test_normalize_zscore():
+    df = pd.DataFrame({"DistanceFromHome": [10, 20, 30]})
+    result = normalize_column(df, "DistanceFromHome", method="z-score")
 
-    def test_does_not_modify_original(self, sample_hr_data):
-        original_nulls = sample_hr_data["Age"].isna().sum()
-        clean_data(sample_hr_data, ["Age"], [])
-        assert sample_hr_data["Age"].isna().sum() == original_nulls
+    assert round(result["DistanceFromHome"].mean(), 6) == 0.0
 
-    def test_fills_with_median(self, sample_hr_data):
-        result = clean_data(sample_hr_data, ["Age"], [])
-        # Median of [34, 29, 41, 25, 30] = 30
-        assert result["Age"].iloc[2] == 30.0
 
-    def test_non_null_values_unchanged(self, sample_hr_data):
-        result = clean_data(sample_hr_data, ["Age"], [])
-        assert result["Age"].iloc[0] == 34.0
-        assert result["Age"].iloc[1] == 29.0
+# ───────────────────────────────────────────────
+# Test: encode_binary_column
+# ───────────────────────────────────────────────
+def test_encode_binary_column():
+    df = pd.DataFrame({"OverTime": ["Yes", "No", "Yes"]})
+    result = encode_binary_column(df, "OverTime", positive_value="Yes")
 
-# ───────────────────────────────────────────────────────────────
-# encode_categoricals tests
-# ───────────────────────────────────────────────────────────────
+    assert result["OverTime"].tolist() == [1, 0, 1]
 
-class TestEncodeCategoricals:
 
-    def test_creates_dummy_columns(self, sample_hr_data):
-        result = encode_categoricals(sample_hr_data, ["Gender"])
-        assert "Gender" not in result.columns
-        assert any("Gender" in col for col in result.columns)
+def test_encode_binary_column_raises_for_nonbinary():
+    df = pd.DataFrame({"Department": ["Sales", "HR", "R&D"]})
+    with pytest.raises(ValueError):
+        encode_binary_column(df, "Department", positive_value="Sales")
 
-    def test_drops_first_category(self, sample_hr_data):
-        result = encode_categoricals(sample_hr_data, ["Gender"])
-        gender_cols = [col for col in result.columns if "Gender" in col]
-        assert len(gender_cols) == 1  # drop_first=True
 
-    def test_preserves_row_count(self, sample_hr_data):
-        result = encode_categoricals(sample_hr_data, ["Gender", "Department"])
-        assert len(result) == len(sample_hr_data)
+# ───────────────────────────────────────────────
+# Test: create_age_bins
+# ───────────────────────────────────────────────
+def test_create_age_bins():
+    df = pd.DataFrame({"Age": [22, 29, 45, 60]})
+    result = create_age_bins(df, column="Age")
 
-# ───────────────────────────────────────────────────────────────
-# check_data_quality tests
-# ───────────────────────────────────────────────────────────────
+    assert "Age_bin" in result.columns
+    assert result["Age_bin"].iloc[0] == "18-24"
+    assert result["Age_bin"].iloc[2] == "35-49"
 
-class TestDataQuality:
 
-    def test_counts_nulls(self, sample_hr_data):
-        report = check_data_quality(sample_hr_data, ["Age", "MonthlyIncome"])
-        assert report["total_nulls"] == 2  # one in Age, one in MonthlyIncome
+# ───────────────────────────────────────────────
+# Test: remove_outliers
+# ───────────────────────────────────────────────
+def test_remove_outliers_iqr():
+    df = pd.DataFrame({"YearsAtCompany": [1, 2, 3, 4, 100]})
+    result = remove_outliers(df, "YearsAtCompany", method="iqr")
 
-    def test_counts_rows(self, sample_hr_data):
-        report = check_data_quality(sample_hr_data, ["Age"])
-        assert report["total_rows"] == 6
+    # 100 should be removed as an outlier
+    assert 100 not in result["YearsAtCompany"].values
 
-    def test_reports_numeric_ranges(self, sample_hr_data):
-        report = check_data_quality(sample_hr_data, ["YearsAtCompany"])
-        assert report["YearsAtCompany_min"] == 1
-        assert report["YearsAtCompany_max"] == 10
+
+def test_remove_outliers_zscore():
+    df = pd.DataFrame({"MonthlyRate": [1000, 1100, 1200, 50000]})
+    result = remove_outliers(df, "MonthlyRate", method="zscore", threshold=2)
+
+    assert 50000 not in result["MonthlyRate"].values
+    print("Result values:", result["MonthlyRate"].values)

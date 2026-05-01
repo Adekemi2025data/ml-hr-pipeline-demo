@@ -3,90 +3,94 @@ import csv
 import os
 import sys
 
-def generate_hr_data(n_rows, output_path, seed=42):
-    """Generate a synthetic HR attrition dataset."""
+
+def generate_hr_attrition_data(n_rows, output_path, seed=42):
+    """Generate a synthetic HR employee attrition dataset."""
     random.seed(seed)
 
     header = [
-        "Age", "Attrition", "BusinessTravel", "DailyRate", "Department",
-        "DistanceFromHome", "Education", "EducationField", "EmployeeCount",
-        "EmployeeNumber", "EnvironmentSatisfaction", "Gender", "HourlyRate",
-        "JobInvolvement", "JobLevel", "JobRole", "JobSatisfaction",
-        "MaritalStatus", "MonthlyIncome", "MonthlyRate",
-        "NumCompaniesWorked", "Over18", "OverTime", "PercentSalaryHike",
-        "PerformanceRating", "YearsAtCompany", "YearsInCurrentRole",
-        "YearsSinceLastPromotion", "YearsWithCurrManager"
+        "EmployeeNumber", "Age", "Gender", "Department", "JobRole",
+        "MonthlyIncome", "YearsAtCompany", "JobSatisfaction",
+        "OverTime", "BusinessTravel", "DistanceFromHome",
+        "NumCompaniesWorked", "Education", "MaritalStatus",
+        "PerformanceRating", "Attrition"
     ]
 
-    # Example categorical mappings
-    business_travel = [1, 2, 3]  # Rarely, Frequently, Travel_Regularly
-    departments = [1, 2, 3]      # Sales, R&D, HR
-    education_fields = [1, 2, 3, 4, 5, 6]
-    job_roles = list(range(1, 10))
-    marital_status = [1, 2, 3]   # Single, Married, Divorced
+    genders = ["Male", "Female"]
+    departments = ["Sales", "Research & Development", "Human Resources"]
+    job_roles = [
+        "Sales Executive", "Research Scientist", "Laboratory Technician",
+        "Manager", "Healthcare Representative", "Human Resources",
+        "Manufacturing Director", "Sales Representative"
+    ]
+    business_travel = ["Travel_Rarely", "Travel_Frequently", "Non-Travel"]
+    marital_status = ["Single", "Married", "Divorced"]
 
     rows = []
+
     for i in range(n_rows):
+        age = random.randint(18, 60)
+        years_at_company = random.randint(0, 40)
+        monthly_income = random.randint(2000, 20000)
+        job_satisfaction = random.randint(1, 4)
+        distance = random.randint(1, 30)
+        num_companies = random.randint(0, 10)
+        education = random.randint(1, 5)
+        performance = random.choice([3, 4])  # typical IBM dataset pattern
+        overtime = random.choice(["Yes", "No"])
 
-        # Attrition probability logic (example)
-        attrition_prob = 0.10
-        years = random.randint(0, 40)
-        overtime = random.choice([1, 2])
+        # Base attrition probability
+        attr_prob = 0.05
 
-        if overtime == 2:
-            attrition_prob += 0.10
-        if years < 3:
-            attrition_prob += 0.15
-        if random.randint(1, 5) == 5:
-            attrition_prob += 0.05
+        # Increase attrition probability based on realistic HR patterns
+        if overtime == "Yes":
+            attr_prob += 0.15
+        if job_satisfaction == 1:
+            attr_prob += 0.20
+        if years_at_company < 3:
+            attr_prob += 0.10
+        if distance > 20:
+            attr_prob += 0.05
+        if monthly_income < 4000:
+            attr_prob += 0.10
 
-        attrition = 1 if random.random() < attrition_prob else 0
+        attrition = "Yes" if random.random() < attr_prob else "No"
 
         row = [
-            random.randint(18, 60),          # Age
-            attrition,                       # Attrition
-            random.choice(business_travel),  # BusinessTravel
-            random.randint(100, 1500),       # DailyRate
-            random.choice(departments),      # Department
-            random.randint(1, 30),           # DistanceFromHome
-            random.randint(1, 5),            # Education
-            random.choice(education_fields), # EducationField
-            1,                                # EmployeeCount
-            i + 1,                            # EmployeeNumber
-            random.randint(1, 4),            # EnvironmentSatisfaction
-            random.choice([1, 2]),           # Gender
-            random.randint(30, 100),         # HourlyRate
-            random.randint(1, 4),            # JobInvolvement
-            random.randint(1, 5),            # JobLevel
-            random.choice(job_roles),        # JobRole
-            random.randint(1, 4),            # JobSatisfaction
-            random.choice(marital_status),   # MaritalStatus
-            random.randint(1000, 20000),     # MonthlyIncome
-            random.randint(1000, 20000),     # MonthlyRate
-            random.randint(0, 10),           # NumCompaniesWorked
-            1,                                # Over18
-            overtime,                         # OverTime
-            random.randint(10, 25),          # PercentSalaryHike
-            random.randint(1, 4),            # PerformanceRating
-            years,                            # YearsAtCompany
-            random.randint(0, years),         # YearsInCurrentRole
-            random.randint(0, years),         # YearsSinceLastPromotion
-            random.randint(0, years)          # YearsWithCurrManager
+            i + 1,
+            age,
+            random.choice(genders),
+            random.choice(departments),
+            random.choice(job_roles),
+            monthly_income,
+            years_at_company,
+            job_satisfaction,
+            overtime,
+            random.choice(business_travel),
+            distance,
+            num_companies,
+            education,
+            random.choice(marital_status),
+            performance,
+            attrition
         ]
 
         rows.append(row)
 
+    # Save file
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     with open(output_path, "w", newline="") as f:
         writer = csv.writer(f)
         writer.writerow(header)
         writer.writerows(rows)
 
-    attrition_count = sum(r[1] for r in rows)
+    # Summary
+    attr_count = sum(1 for r in rows if r[-1] == "Yes")
     print(f"Generated {n_rows} rows at {output_path}")
-    print(f"Attrition rate: {attrition_count/n_rows:.1%} ({attrition_count} employees left)")
+    print(f"Attrition rate: {attr_count/n_rows:.1%} ({attr_count} employees left)")
+
 
 if __name__ == "__main__":
     n_rows = int(sys.argv[1]) if len(sys.argv) > 1 else 5000
-    output_path = sys.argv[2] if len(sys.argv) > 2 else "data/raw/hr_data.csv"
-    generate_hr_data(n_rows, output_path)
+    output_path = sys.argv[2] if len(sys.argv) > 2 else "data/raw/hr_synthetic.csv"
+    generate_hr_attrition_data(n_rows, output_path)

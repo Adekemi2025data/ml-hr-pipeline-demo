@@ -1,7 +1,14 @@
 import mlflow
 
 # Connect to the experiment
-experiment = mlflow.get_experiment_by_name("hr-attrition-prediction")
+experiment_name = "hr-attrition-prediction"
+experiment = mlflow.get_experiment_by_name(experiment_name)
+
+if experiment is None:
+    raise ValueError(
+        f"Experiment '{experiment_name}' not found. "
+        f"Run your training script first to create it."
+    )
 
 # Search for all completed runs, sorted by F1 score
 runs = mlflow.search_runs(
@@ -23,7 +30,7 @@ for i, row in runs.head(5).iterrows():
 # Find the best run
 best_run = runs.iloc[0]
 print(f"\n{'=' * 80}")
-print(f"BEST MODEL")
+print("BEST MODEL")
 print(f"{'=' * 80}")
 print(f"Run ID:     {best_run['run_id']}")
 print(f"Model Type: {best_run['params.model_type']}")

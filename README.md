@@ -55,3 +55,26 @@ Themodel shows:
 •	Recall: 11.93%
 This indicates class imbalance, common in attrition datasets where most employees stay. High accuracy but low recall means the model struggles to identify employees who leave.
 
+The drift detected the following features :
+
+Age: 0.38 drift score (Wasserstein distance)
+MonthlyIncome: 0.58 drift score (Wasserstein distance)
+YearsAtCompany: 0.26 drift score (Wasserstein distance)
+OverTime: 0.83 drift score (Jensen-Shannon distance)
+Department: 0.83 drift score (Jensen-Shannon distance)
+
+Higher scores mean more drift. The OverTime and Department features at 0.83 are showing substantial shifts
+
+The MonthlyIncome tracking shows clear progression:
+
+Month 1: 
+- Drift score: 0.037 (below threshold) - Status: OK
+- Small difference between reference mean ($10,615) and current mean ($10,655)
+
+Month 2: 
+- Drift score: 0.155 (above threshold) - Status: DRIFT  
+- Noticeable jump to $11,451 mean income
+
+Month 3: 
+- Drift score: 0.576 (significantly above threshold) - Status: DRIFT
+- Major shift to $13,726 mean income

@@ -4,8 +4,8 @@ import sys
 import random
 import pickle
 import json
-import yaml
 from collections import Counter
+
 
 def load_data(path):
     """Load CSV data and return rows as dictionaries."""
@@ -16,6 +16,7 @@ def load_data(path):
             rows.append(row)
     return rows
 
+
 def simple_train_test_split(rows, test_ratio=0.2, seed=42):
     """Split data into train and test sets."""
     random.seed(seed)
@@ -23,24 +24,27 @@ def simple_train_test_split(rows, test_ratio=0.2, seed=42):
     split_idx = int(len(rows) * (1 - test_ratio))
     return rows[:split_idx], rows[split_idx:]
 
+
 def train_simple_model(train_rows):
     """
     Train a simple rule-based HR attrition model.
-    This is intentionally simple—similar to your churn example.
+    This mirrors the churn example but adapted to HR fields.
     """
 
     # Attrition rate by OverTime
     overtime_rates = {}
-    for ot in ["1", "2"]:  # 1 = No, 2 = Yes
+    for ot in ["Yes", "No"]:
         matching = [r for r in train_rows if r["OverTime"] == ot]
         if matching:
-            left = sum(1 for r in matching if r["Attrition"] == "1")
+            left = sum(1 for r in matching if r["Attrition"] == "Yes")
             overtime_rates[ot] = left / len(matching)
         else:
             overtime_rates[ot] = 0.5
 
     # Learn average YearsAtCompany for employees who left
-    left_years = [int(r["YearsAtCompany"]) for r in train_rows if r["Attrition"] == "1"]
+    left_years = [
+        int(r["YearsAtCompany"]) for r in train_rows if r["Attrition"] == "Yes"
+    ]
     avg_left_years = sum(left_years) / len(left_years) if left_years else 3
 
     # Learn satisfaction threshold
@@ -50,10 +54,11 @@ def train_simple_model(train_rows):
     model = {
         "attrition_by_overtime": overtime_rates,
         "years_threshold": avg_left_years,
-        "satisfaction_threshold": avg_satisfaction
+        "satisfaction_threshold": avg_satisfaction,
     }
 
     return model
+
 
 def predict(model, row):
     """Predict attrition for a single employee row."""
@@ -69,6 +74,7 @@ def predict(model, row):
 
     return 1 if score > 0.4 else 0
 
+
 def evaluate(model, test_rows):
     """Compute accuracy, precision, recall."""
     correct = 0
@@ -78,7 +84,7 @@ def evaluate(model, test_rows):
 
     for row in test_rows:
         pred = predict(model, row)
-        actual = int(row["Attrition"])
+        actual = 1 if row["Attrition"] == "Yes" else 0
 
         if pred == actual:
             correct += 1
@@ -97,11 +103,16 @@ def evaluate(model, test_rows):
         "accuracy": round(accuracy, 4),
         "precision": round(precision, 4),
         "recall": round(recall, 4),
-        "test_size": len(test_rows)
+        "test_size": len(test_rows),
     }
 
+
 if __name__ == "__main__":
-    data_path = sys.argv[1] if len(sys.argv) > 1 else "data/raw/hr_data.csv"
+    data_path = (
+        sys.argv[1]
+        if len(sys.argv) > 1
+        else "data/raw/WAFn-UseC-HR-Employee-Attrition.csv"
+    )
 
     print(f"Loading data from {data_path}...")
     rows = load_data(data_path)

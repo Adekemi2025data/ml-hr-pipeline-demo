@@ -1,0 +1,35 @@
+dataset:
+  name: hr_attrition_dataset
+  description: >
+    Human Resources employee dataset used for attrition prediction,
+    drift monitoring, and model evaluation.
+
+source:
+  file_path: "data/raw/WAFn-UseC-HR-Employee-Attrition.csv"
+  target_column: Attrition
+
+processed:
+  processed_path: "data/processed/hr_clean.csv"
+
+model:
+  type: random_forest
+  hyperparameters:
+    n_estimators: 150
+    max_depth: 12
+    random_state: 42
+
+splits:
+  test_size: 0.2
+  random_state: 42
+  stratify: Attrition
+
+artifacts:
+  model_path: "models/hr_attrition_model.pkl"
+  metrics_path: "metrics/results.json"
+
+metrics:
+  evaluation:
+    - accuracy
+    - precision
+    - recall
+    - f1_score
